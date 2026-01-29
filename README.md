@@ -1,8 +1,14 @@
-가상환경 설치 (처음한번만):
+## Setup (first time only)
+
+```bash
 conda create -n myenv python=3.11 -y
 conda activate myenv
 pip install -r requirements.txt
+```
 
-실행:
+## Run
+
+```bash
 conda activate myenv
 python app.py
+```
