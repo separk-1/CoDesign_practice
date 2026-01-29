@@ -1,0 +1,46 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "Equipment",
+      "description": "Pump moves fluid and increases pressure.",
+      "id": "Pump"
+    },
+    {
+      "label": "Equipment",
+      "description": "Heat exchanger transfers heat between streams.",
+      "id": "HEX"
+    },
+    {
+      "label": "Concept",
+      "description": "Flow connects equipment through lines.",
+      "id": "Flow"
+    }
+  ],
+  "edges": [
+    {
+      "type": "feeds",
+      "source": "Pump",
+      "target": "HEX"
+    },
+    {
+      "type": "involves",
+      "source": "Flow",
+      "target": "Pump"
+    }
+  ],
+  "links": [
+    {
+      "type": "feeds",
+      "source": "Pump",
+      "target": "HEX"
+    },
+    {
+      "type": "involves",
+      "source": "Flow",
+      "target": "Pump"
+    }
+  ]
+}
