@@ -40,32 +40,19 @@ def save_graph(graph: nx.DiGraph):
     with open(GRAPH_FILE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-
-def add_node(graph: nx.DiGraph, node_id: str, attributes: Dict[str, Any]) -> bool:
-    if graph.has_node(node_id):
-        return False
-    graph.add_node(node_id, **attributes)
-    save_graph(graph)
-    return True
-
-def add_edge(graph: nx.DiGraph, source: str, target: str, attributes: Dict[str, Any]) -> bool:
-    if not graph.has_node(source) or not graph.has_node(target):
-        return False
-    if graph.has_edge(source, target):
-        return False
-    graph.add_edge(source, target, **attributes)
-    save_graph(graph)
-    return True
-
 def create_default_knowledge_graph() -> nx.DiGraph:
     G = nx.DiGraph()
 
-    G.add_node("Pump", label="Equipment", description="Pump moves fluid and increases pressure.")
-    G.add_node("HEX", label="Equipment", description="Heat exchanger transfers heat between streams.")
-    G.add_node("Flow", label="Concept", description="Flow connects equipment through lines.")
+    # Add nodes with basic attributes
+    G.add_node("Apple", label="Fruit", description="A sweet, crisp fruit.")
+    G.add_node("Banana", label="Fruit", description="A long, curved fruit.")
+    G.add_node("Fruit", label="Concept", description="The sweet and fleshy product of a tree or other plant.")
+    G.add_node("Red", label="Color", description="The color of blood or fire.")
 
-    G.add_edge("Pump", "HEX", type="feeds")
-    G.add_edge("Flow", "Pump", type="involves")
+    # Add edges defining relationships
+    G.add_edge("Apple", "Fruit", type="is_a")
+    G.add_edge("Banana", "Fruit", type="is_a")
+    G.add_edge("Apple", "Red", type="has_color")
 
     save_graph(G)
     return G

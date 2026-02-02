@@ -1,52 +1,18 @@
-// static/ebct.js (v19): tooltip added (auto-create), label/zoom kept
 document.addEventListener('DOMContentLoaded', () => {
   const $chat = document.getElementById('chat');
   const $q    = document.getElementById('q');
   const $send = document.getElementById('send');
-  const $roleHint = document.getElementById('roleHint');
-  const $roleBtns = document.querySelectorAll('.rolebtn');
   const $dbBtn = document.getElementById('db-btn');
   const $graphContainer = document.getElementById('graph-container');
 
-  const $pidSelect = document.getElementById('pid-select');
-  const $pidIcons  = document.querySelectorAll('.pid-icon');
-
-  let state = { role: null, used: null };
   let messages = [];
-
-  // P&ID 셀렉트 / 아이콘 클릭 핸들러
-  if ($pidSelect) {
-    $pidSelect.addEventListener('change', () => {
-      const pid = $pidSelect.value || 'ALL';
-      currentPid = pid;
-      if ($pidIcons && $pidIcons.length) {
-        $pidIcons.forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.pid === pid || (pid === 'ALL' && btn.dataset.pid === 'ALL'));
-        });
-      }
-      renderGraph(pid);
-    });
-  }
-
-  if ($pidIcons && $pidIcons.length) {
-    $pidIcons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const pid = btn.dataset.pid || 'ALL';
-        currentPid = pid;
-        $pidIcons.forEach(b => b.classList.toggle('active', b === btn));
-        if ($pidSelect) $pidSelect.value = pid;
-        renderGraph(pid);
-      });
-    });
-  }
-
-  // 그래프 전체 데이터 캐시 + 현재 필터
   let fullGraphData = null;
-  let currentPid = 'ALL';
+  let graphVisible = false;
 
   const converter = new showdown.Converter();
   const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+  // Helper to add chat bubbles
   const bubble = (role, text) => {
     const b = document.createElement('div');
     b.className = `bubble ${role === 'user' ? 'user' : 'bot'}`;
@@ -65,64 +31,45 @@ document.addEventListener('DOMContentLoaded', () => {
     return p;
   };
 
-  // role select
-  $roleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const role = btn.dataset.role;
-      if (!role) return;
-      state.role = role;
-      $roleHint.textContent =
-        state.role === 'designer'
-          ? 'Designer mode – plain language, alternatives first.'
-          : 'Engineer mode – numbers, units, assumptions.';
-      $roleBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      bubble('bot',
-        state.role === 'designer'
-          ? 'Designer mode activated. How can I help you today?'
-          : 'Engineer mode activated. Please provide the baseline parameters.'
-      );
-      $q.focus();
-    });
-  });
-
-  // DB(Graph) toggle
-  let graphVisible = false;
-  $dbBtn.addEventListener('click', async () => {
+  // Toggle Graph View
+  $dbBtn.addEventListener('click', () => {
     graphVisible = !graphVisible;
-    $dbBtn.setAttribute('aria-pressed', graphVisible);
     $dbBtn.classList.toggle('active', graphVisible);
 
+    // Toggle display
     $chat.style.display = graphVisible ? 'none' : 'flex';
     $graphContainer.style.display = graphVisible ? 'block' : 'none';
+
     if (graphVisible) {
-      $q.placeholder = 'Drag / wheel to explore the graph.';
+      $q.placeholder = 'Explore the graph structure above.';
       renderGraph();
     } else {
-      $q.placeholder = 'Ask a question…';
+      $q.placeholder = 'Ask a question about the graph...';
     }
   });
 
+  // Send Message
   async function send() {
     const text = ($q.value || '').trim();
+    if (!text) return;
 
     $q.value = '';
     messages.push({ role: 'user', content: text });
     bubble('user', esc(text));
 
-    const loadingText = plainText('Generating response...', 'loading-text');
+    const loadingText = plainText('Thinking...', 'loading-text');
 
     try {
       const res = await fetch('/api/chat', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ messages, state })
+        body: JSON.stringify({ messages })
       });
       const raw = await res.text();
       let data; try { data = JSON.parse(raw); } catch { data = { reply: raw }; }
 
       loadingText.classList.add('fade-out');
-      loadingText.addEventListener('transitionend', () => loadingText.remove());
+      setTimeout(() => loadingText.remove(), 500);
 
       if (!res.ok) {
         bubble('bot', `Error: ${esc(data.error || 'Server error')}`);
@@ -131,314 +78,154 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const reply = data.reply || '(no reply)';
       bubble('bot', reply);
-
-      if (data.rationale && data.rationale !== "Direct calculation performed.") {
-        const det = document.createElement('details');
-        det.className = 'bubble bot muted';
-        const sum = document.createElement('summary');
-        sum.textContent = 'Show technical rationale';
-        det.appendChild(sum);
-        const div = document.createElement('div');
-        div.style.marginTop = '10px';
-        div.innerHTML = converter.makeHtml(data.rationale);
-        det.appendChild(div);
-        $chat.appendChild(det);
-        $chat.scrollTop = $chat.scrollHeight;
-      }
-
-      if (data.calc && data.calc.used) state.used = data.calc.used;
       messages.push({ role: 'assistant', content: reply });
+
     } catch (e) {
-      loadingText.classList.add('fade-out');
-      loadingText.addEventListener('transitionend', () => loadingText.remove());
+      loadingText.remove();
       console.error(e);
-      bubble('bot', 'Request failed. See Console.');
+      bubble('bot', 'Request failed. Check console.');
     }
   }
 
   $send.addEventListener('click', send);
   $q.addEventListener('keydown', (e)=>{ if(e.key==='Enter') send(); });
 
-  // ====== TOOLTIP (auto-create if missing) ======
-  let $tip = document.getElementById('kg-tooltip');
-  if (!$tip) {
-    $tip = document.createElement('div');
-    $tip.id = 'kg-tooltip';
-    $tip.style.position = 'fixed';
-    $tip.style.pointerEvents = 'none';
-    $tip.style.zIndex = '1000';
-    $tip.style.display = 'none';
-    $tip.style.maxWidth = '360px';
-    $tip.style.padding = '10px 12px';
-    $tip.style.background = '#111';
-    $tip.style.color = '#fff';
-    $tip.style.borderRadius = '10px';
-    $tip.style.boxShadow = '0 6px 20px rgba(0,0,0,.25)';
-    $tip.style.font = '13px/1.4 system-ui, -apple-system, Segoe UI, Arial';
-    document.body.appendChild($tip);
-  }
+  // Tooltip Logic
+  const $tip = document.getElementById('kg-tooltip');
 
-
-  function tipHtml(d) {
-    const lines = [];
-
-    const title =
-      d.tag_name ||
-      d.line_number ||
-      d.equipment_tag ||
-      d.id ||
-      "";
-
-    const type = d.label || d.type || "node";
-
-    lines.push(
-      `<div style="font-weight:700;margin-bottom:6px;">${esc(title)} <span style="opacity:.7">(${esc(type)})</span></div>`
-    );
-
-    if (d.label === "Equipment") {
-      if (d.pid_name)   lines.push(`<div><b>P&ID:</b> ${esc(d.pid_name)}</div>`);
-      if (d.tag_name)   lines.push(`<div><b>Tag:</b> ${esc(d.tag_name)}</div>`);
-      if (d.class_name) lines.push(`<div><b>Class:</b> ${esc(d.class_name)}</div>`);
-    }
-
-    if (d.label === "Nozzle") {
-      if (d.equipment_tag)    lines.push(`<div><b>Equipment:</b> ${esc(d.equipment_tag)}</div>`);
-      if (d.subtag)           lines.push(`<div><b>Nozzle:</b> ${esc(d.subtag)}</div>`);
-      if (d.nominal_diameter) lines.push(`<div><b>ND:</b> ${esc(d.nominal_diameter)}</div>`);
-    }
-
-    if (d.label === "Line") {
-      if (d.line_number)       lines.push(`<div><b>Line:</b> ${esc(d.line_number)}</div>`);
-      if (d.fluid_code)        lines.push(`<div><b>Fluid:</b> ${esc(d.fluid_code)}</div>`);
-      if (d.nominal_diameter)  lines.push(`<div><b>ND:</b> ${esc(d.nominal_diameter)}</div>`);
-      if (d.piping_class_code) lines.push(`<div><b>Class:</b> ${esc(d.piping_class_code)}</div>`);
-    }
-
-    if (d.description) lines.push(`<div style="margin-top:6px;">${esc(d.description)}</div>`);
-    if (d.rationale)   lines.push(`<div style="opacity:.85;">${esc(d.rationale)}</div>`);
-
-    return lines.join("");
-  }
-
-  function showTip(html, x, y){
+  function showTip(html, x, y) {
     $tip.innerHTML = html;
     $tip.style.display = 'block';
+    // Positioning logic
     const rect = $tip.getBoundingClientRect();
-    let tx = x + 14, ty = y + 14;
-    if (tx + rect.width  > window.innerWidth)  tx = x - rect.width - 14;
-    if (ty + rect.height > window.innerHeight) ty = y - rect.height - 14;
+    let tx = x + 15, ty = y + 15;
+    if (tx + rect.width > window.innerWidth) tx = x - rect.width - 15;
+    if (ty + rect.height > window.innerHeight) ty = y - rect.height - 15;
     $tip.style.left = tx + 'px';
     $tip.style.top  = ty + 'px';
   }
-  function hideTip(){ $tip.style.display = 'none'; }
+  function hideTip() { $tip.style.display = 'none'; }
 
-    // ====== GRAPH RENDER (fixed labels/zoom/overlap + tooltip) ======
-  async function renderGraph(pidName = 'ALL') {
-    try {
-      // 1) 처음 한 번만 서버에서 전체 그래프 로드
-      if (!fullGraphData) {
-        const res = await fetch('/api/knowledge-graph');
-        if (!res.ok) throw new Error('Failed to fetch knowledge graph');
-        fullGraphData = await res.json();
-
-        // P&ID 목록을 셀렉트 박스에 채우기
-        if ($pidSelect && fullGraphData.nodes) {
-          const pidSet = new Set(
-            fullGraphData.nodes
-              .map(n => n.pid_name)
-              .filter(Boolean)
-          );
-          const sorted = Array.from(pidSet).sort();
-          sorted.forEach(pn => {
-            const opt = document.createElement('option');
-            opt.value = pn;
-            opt.textContent = pn;
-            $pidSelect.appendChild(opt);
-          });
-        }
-      }
-
-      currentPid = pidName || currentPid || 'ALL';
-
-      const baseNodes = fullGraphData.nodes || [];
-      const baseLinks = (fullGraphData.links || fullGraphData.edges || []);
-
-      // 2) pid_name으로 서브그래프 만들기
-      let nodes, links;
-      if (currentPid === 'ALL') {
-        nodes = baseNodes.map(d => ({ ...d }));
-        links = baseLinks.map(e => ({ ...e }));
-      } else {
-        nodes = baseNodes
-          .filter(n => n.pid_name === currentPid)
-          .map(d => ({ ...d }));
-
-        const keep = new Set(nodes.map(n => n.id));
-        links = baseLinks
-          .filter(e => keep.has(e.source) && keep.has(e.target))
-          .map(e => ({ ...e }));
-      }
-
-      const width  = $graphContainer.offsetWidth || Math.floor(window.innerWidth * 0.9);
-      const height = $graphContainer.offsetHeight || 560;
-
-      const svg = d3.select("#knowledge-graph")
-        .html("")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("shape-rendering", "geometricPrecision");
-
-      // Root group for zoom/pan
-      const root = svg.append("g");
-      const gLinks  = root.append("g").attr("class","kg-links");
-      const gNodes  = root.append("g").attr("class","kg-nodes");
-      const gLabels = root.append("g").attr("class","kg-labels"); // keep labels on top
-
-      const linksNorm = links.map(e => ({
-        source: (e.source && e.source.id) ? e.source.id : e.source,
-        target: (e.target && e.target.id) ? e.target.id : e.target,
-        type: e.type || 'rel'
-      }));
-      const nodesNorm = nodes;
-
-      // Simulation
-      const sim = d3.forceSimulation(nodesNorm)
-        .force("link", d3.forceLink(linksNorm).id(d=>d.id).distance(110).strength(0.8))
-        .force("charge", d3.forceManyBody().strength(-300))
-        .force("collide", d3.forceCollide().radius(18))
-        .force("center", d3.forceCenter(width/2, height/2));
-
-      // Links
-      const link = gLinks.selectAll("line").data(linksNorm).join("line")
-        .attr("stroke", "#b0bec5")
-        .attr("stroke-opacity", 0.9)
-        .attr("stroke-width", 1.4)
-        .attr("vector-effect", "non-scaling-stroke")
-        .on("mouseenter", (e,d) => showTip(
-          `<b>${esc(d.source.id || d.source)}</b> — <i>${esc(d.type)}</i> → <b>${esc(d.target.id || d.target)}</b>`,
-          e.clientX, e.clientY))
-        .on("mousemove",  (e,d) => showTip(
-          `<b>${esc(d.source.id || d.source)}</b> — <i>${esc(d.type)}</i> → <b>${esc(d.target.id || d.target)}</b>`,
-          e.clientX, e.clientY))
-        .on("mouseleave", hideTip);
-
-      // Nodes
-      const nodeColor = d => {
-        if (d.color) return d.color;
-        if (d.label === 'Equipment') return '#3498DB';
-        if (d.label === 'Nozzle')    return '#27AE60';
-        if (d.label === 'Line')      return '#9CA3AF';
-        return '#64748b';
-      };
-
-      const nodeLabel = d =>
-        d.tag_name || d.line_number || d.equipment_tag || d.id;
-
-      const node = gNodes.selectAll("circle").data(nodesNorm).join("circle")
-        .attr("r", 9)
-        .attr("fill", nodeColor)
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 1.4)
-        .attr("vector-effect", "non-scaling-stroke")
-        .style("cursor","pointer")
-        .on("mouseenter", (e,d)=> showTip(tipHtml(d), e.clientX, e.clientY))
-        .on("mousemove",  (e,d)=> showTip(tipHtml(d), e.clientX, e.clientY))
-        .on("mouseleave", hideTip)
-        .call(d3.drag()
-          .on("start", (e,d)=>{ if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; hideTip(); })
-          .on("drag",  (e,d)=>{ d.fx=e.x; d.fy=e.y; })
-          .on("end",   (e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
-        );
-
-      // Labels: halo + fill
-      const labelHalo = gLabels.selectAll("text.halo").data(nodesNorm).join("text")
-        .attr("class","halo")
-        .attr("text-anchor","start")
-        .attr("font-family","Inter, system-ui, -apple-system, Segoe UI, Arial")
-        .attr("font-size", 14)
-        .attr("fill", "#111")
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 4)
-        .attr("paint-order", "stroke")
-        .attr("vector-effect","non-scaling-stroke")
-        .text(nodeLabel);
-
-      const label = gLabels.selectAll("text.lbl").data(nodesNorm).join("text")
-        .attr("class","lbl")
-        .attr("text-anchor","start")
-        .attr("font-family","Inter, system-ui, -apple-system, Segoe UI, Arial")
-        .attr("font-size", 14)
-        .attr("fill", "#111")
-        .style("pointer-events","auto")
-        .text(nodeLabel)
-        .on("mouseenter", (e,d)=> showTip(tipHtml(d), e.clientX, e.clientY))
-        .on("mousemove",  (e,d)=> showTip(tipHtml(d), e.clientX, e.clientY))
-        .on("mouseleave", hideTip);
-
-      sim.on("tick", () => {
-        link
-          .attr("x1", d => d.source.x)
-          .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x)
-          .attr("y2", d => d.target.y);
-        node
-          .attr("cx", d => d.x)
-          .attr("cy", d => d.y);
-        label
-          .attr("x", d => d.x + 12)
-          .attr("y", d => d.y + 4);
-        labelHalo
-          .attr("x", d => d.x + 12)
-          .attr("y", d => d.y + 4);
-      });
-
-      // Zoom & pan + 사용자 줌 고정
-      let userZoomed = false;
-      const zoom = d3.zoom()
-        .scaleExtent([0.2, 6])
-        .on("zoom", (event) => {
-          userZoomed = true;
-          root.attr("transform", event.transform);
-        });
-      svg.call(zoom).on("dblclick.zoom", null);
-
-      // Fit view (사용자가 줌하기 전까지만)
-      sim.on('end', () => {
-        if (!userZoomed) fitToView();
-      });
-
-      window.addEventListener('resize', () => {
-        svg.attr("width", $graphContainer.offsetWidth)
-           .attr("height", $graphContainer.offsetHeight || 560);
-        if (!userZoomed) fitToView();
-      });
-
-      function fitToView(pad=60){
-        const b = root.node().getBBox();
-        if (!isFinite(b.x) || !isFinite(b.width)) return;
-        const w = +svg.attr('width'), h = +svg.attr('height');
-        const k = Math.min((w-pad)/b.width, (h-pad)/b.height, 2.5);
-        const tx = (w/2) - k*(b.x + b.width/2);
-        const ty = (h/2) - k*(b.y + b.height/2);
-        svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(k));
-      }
-    } catch (e) {
-      console.error(e);
-      const svg = d3.select("#knowledge-graph");
-      const width  = $graphContainer.offsetWidth  || Math.floor(window.innerWidth * 0.9);
-      const height = $graphContainer.offsetHeight || 560;
-      svg.html("").attr("width", width).attr("height", height);
-      svg.append("text")
-        .attr("x", width/2).attr("y", height/2)
-        .attr("text-anchor","middle")
-        .attr("font-size",16).attr("fill","#dc2626")
-        .text("Failed to load knowledge graph.");
+  function getTooltipContent(d) {
+    let lines = [`<div style="font-weight:bold; margin-bottom:4px;">${esc(d.id)}</div>`];
+    for (const [k, v] of Object.entries(d)) {
+      if (['id', 'x', 'y', 'fx', 'fy', 'index', 'vx', 'vy'].includes(k)) continue;
+      lines.push(`<div><b>${esc(k)}:</b> ${esc(v)}</div>`);
     }
+    return lines.join('');
   }
 
+  // Graph Rendering with D3
+  async function renderGraph() {
+    if (!fullGraphData) {
+      try {
+        const res = await fetch('/api/knowledge-graph');
+        if (!res.ok) throw new Error('Failed to load graph');
+        fullGraphData = await res.json();
+      } catch (e) {
+        console.error(e);
+        return;
+      }
+    }
 
-  bubble(
-    "bot",
-    "Hi Jade :) Feel free to explore and modify this code."
-  );
+    const width = $graphContainer.offsetWidth;
+    const height = 600;
+
+    const svg = d3.select("#knowledge-graph");
+    svg.selectAll("*").remove(); // Clear previous
+
+    svg.attr("width", width).attr("height", height);
+
+    // Zoom support
+    const g = svg.append("g");
+    const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (e) => {
+      g.attr("transform", e.transform);
+    });
+    svg.call(zoom);
+
+    const nodes = (fullGraphData.nodes || []).map(d => ({...d}));
+    const links = (fullGraphData.links || fullGraphData.edges || []).map(d => ({...d}));
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+      .force("charge", d3.forceManyBody().strength(-300))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collide", d3.forceCollide(20));
+
+    // Draw lines (edges)
+    const link = g.append("g")
+      .selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("stroke", "#999")
+      .attr("stroke-opacity", 0.6)
+      .attr("stroke-width", 1.5)
+      .on("mouseover", (e, d) => {
+        showTip(`<b>Relation:</b> ${esc(d.type || 'linked')}<br><b>Source:</b> ${d.source.id}<br><b>Target:</b> ${d.target.id}`, e.clientX, e.clientY);
+      })
+      .on("mouseout", hideTip);
+
+    // Draw circles (nodes)
+    const node = g.append("g")
+      .selectAll("circle")
+      .data(nodes)
+      .join("circle")
+      .attr("r", 10)
+      .attr("fill", d => {
+          // Simple color logic based on label or random
+          const colors = ["#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231", "#911eb4", "#46f0f0", "#f032e6"];
+          if(d.label) {
+             let hash = 0;
+             for (let i = 0; i < d.label.length; i++) hash = d.label.charCodeAt(i) + ((hash << 5) - hash);
+             return colors[Math.abs(hash) % colors.length];
+          }
+          return "#2563eb";
+      })
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
+      .call(d3.drag()
+        .on("start", (e, d) => {
+          if (!e.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x; d.fy = d.y;
+        })
+        .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
+        .on("end", (e, d) => {
+          if (!e.active) simulation.alphaTarget(0);
+          d.fx = null; d.fy = null;
+        })
+      )
+      .on("mouseover", (e, d) => showTip(getTooltipContent(d), e.clientX, e.clientY))
+      .on("mouseout", hideTip);
+
+    // Draw labels
+    const label = g.append("g")
+      .selectAll("text")
+      .data(nodes)
+      .join("text")
+      .text(d => d.id)
+      .attr("x", 12)
+      .attr("y", 3)
+      .attr("font-size", "12px")
+      .attr("fill", "#333")
+      .style("pointer-events", "none");
+
+    simulation.on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+
+      label
+        .attr("x", d => d.x + 12)
+        .attr("y", d => d.y + 3);
+    });
+  }
+
+  // Initial greeting
+  bubble("bot", "Hello! I am your GraphRAG assistant. Ask me anything about the knowledge graph.");
 });

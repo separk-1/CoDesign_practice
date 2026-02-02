@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
-import os, traceback
+import os
+import traceback
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -12,9 +13,11 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 app = Flask(__name__)
 
+# Load the knowledge graph and initialize OpenAI client
 G = gm.get_graph()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-MODEL = os.getenv("OPENAI_MODEL_MAIN", "gpt-5-mini")
+# Default to a standard model if not specified
+MODEL = os.getenv("OPENAI_MODEL_MAIN", "gpt-4o-mini")
 
 @app.get("/")
 def index():
@@ -26,11 +29,12 @@ def ping():
 
 @app.get("/api/knowledge-graph")
 def knowledge_graph():
+    """Returns the graph data in node-link format for visualization."""
     return jsonify(nx.node_link_data(G)), 200
-
 
 @app.post("/api/chat")
 def chat():
+    """Handles chat requests, executes RAG, and returns the response."""
     data = request.get_json(silent=True) or {}
 
     messages = data.get("messages") or []
@@ -45,9 +49,10 @@ def chat():
         out = rag_chain.execute_rag_chain(G, user_msg, client, MODEL)
         return jsonify(out), 200
     except Exception as e:
+        # Print traceback for debugging purposes
+        print(traceback.format_exc())
         return jsonify({
-            "error": str(e),
-            "trace": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 

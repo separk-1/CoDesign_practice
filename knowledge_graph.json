@@ -4,43 +4,41 @@
   "graph": {},
   "nodes": [
     {
-      "label": "Equipment",
-      "description": "Pump moves fluid and increases pressure.",
-      "id": "Pump"
+      "label": "Fruit",
+      "description": "The sweet and fleshy product of a tree or other plant.",
+      "id": "Fruit"
     },
     {
-      "label": "Equipment",
-      "description": "Heat exchanger transfers heat between streams.",
-      "id": "HEX"
+      "label": "Fruit",
+      "description": "A sweet, crisp fruit.",
+      "id": "Apple"
     },
     {
-      "label": "Concept",
-      "description": "Flow connects equipment through lines.",
-      "id": "Flow"
-    }
-  ],
-  "edges": [
-    {
-      "type": "feeds",
-      "source": "Pump",
-      "target": "HEX"
+      "label": "Fruit",
+      "description": "A long, curved fruit.",
+      "id": "Banana"
     },
     {
-      "type": "involves",
-      "source": "Flow",
-      "target": "Pump"
+      "label": "Color",
+      "description": "The color of blood or fire.",
+      "id": "Red"
     }
   ],
   "links": [
     {
-      "type": "feeds",
-      "source": "Pump",
-      "target": "HEX"
+      "type": "is_a",
+      "source": "Apple",
+      "target": "Fruit"
     },
     {
-      "type": "involves",
-      "source": "Flow",
-      "target": "Pump"
+      "type": "is_a",
+      "source": "Banana",
+      "target": "Fruit"
+    },
+    {
+      "type": "has_color",
+      "source": "Apple",
+      "target": "Red"
     }
   ]
 }
