@@ -40,32 +40,55 @@ def save_graph(graph: nx.DiGraph):
     with open(GRAPH_FILE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-
-def add_node(graph: nx.DiGraph, node_id: str, attributes: Dict[str, Any]) -> bool:
-    if graph.has_node(node_id):
-        return False
-    graph.add_node(node_id, **attributes)
-    save_graph(graph)
-    return True
-
-def add_edge(graph: nx.DiGraph, source: str, target: str, attributes: Dict[str, Any]) -> bool:
-    if not graph.has_node(source) or not graph.has_node(target):
-        return False
-    if graph.has_edge(source, target):
-        return False
-    graph.add_edge(source, target, **attributes)
-    save_graph(graph)
-    return True
-
 def create_default_knowledge_graph() -> nx.DiGraph:
     G = nx.DiGraph()
 
-    G.add_node("Pump", label="Equipment", description="Pump moves fluid and increases pressure.")
-    G.add_node("HEX", label="Equipment", description="Heat exchanger transfers heat between streams.")
-    G.add_node("Flow", label="Concept", description="Flow connects equipment through lines.")
+    # --- Nodes ---
 
-    G.add_edge("Pump", "HEX", type="feeds")
-    G.add_edge("Flow", "Pump", type="involves")
+    # Movies
+    G.add_node("Inception", label="Movie", description="A thief who steals corporate secrets through the use of dream-sharing technology.")
+    G.add_node("Titanic", label="Movie", description="A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the luxurious, ill-fated R.M.S. Titanic.")
+    G.add_node("The Matrix", label="Movie", description="A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.")
+    G.add_node("Interstellar", label="Movie", description="A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.")
+
+    # People (Actors/Directors)
+    G.add_node("Leonardo DiCaprio", label="Person", description="American actor and film producer. Known for Titanic and Inception.")
+    G.add_node("Christopher Nolan", label="Person", description="British-American film director, producer, and screenwriter. Known for Inception and Interstellar.")
+    G.add_node("Kate Winslet", label="Person", description="English actress. Known for Titanic.")
+    G.add_node("James Cameron", label="Person", description="Canadian filmmaker. Directed Titanic.")
+    G.add_node("Keanu Reeves", label="Person", description="Canadian actor. Known for The Matrix.")
+    G.add_node("Lana Wachowski", label="Person", description="American film director. Directed The Matrix.")
+    G.add_node("Ellen Page", label="Person", description="Canadian actress. Acted in Inception.")
+
+    # Genres
+    G.add_node("Sci-Fi", label="Genre", description="Science fiction is a genre of speculative fiction.")
+    G.add_node("Romance", label="Genre", description="Romance films involve romantic love stories recorded in visual media.")
+    G.add_node("Action", label="Genre", description="Action film is a film genre in which the protagonist is thrust into a series of events that typically include violence and physical feats.")
+
+    # --- Edges ---
+
+    # Relationships for Inception
+    G.add_edge("Leonardo DiCaprio", "Inception", type="ACTED_IN")
+    G.add_edge("Ellen Page", "Inception", type="ACTED_IN")
+    G.add_edge("Christopher Nolan", "Inception", type="DIRECTED")
+    G.add_edge("Inception", "Sci-Fi", type="HAS_GENRE")
+    G.add_edge("Inception", "Action", type="HAS_GENRE")
+
+    # Relationships for Titanic
+    G.add_edge("Leonardo DiCaprio", "Titanic", type="ACTED_IN")
+    G.add_edge("Kate Winslet", "Titanic", type="ACTED_IN")
+    G.add_edge("James Cameron", "Titanic", type="DIRECTED")
+    G.add_edge("Titanic", "Romance", type="HAS_GENRE")
+
+    # Relationships for The Matrix
+    G.add_edge("Keanu Reeves", "The Matrix", type="ACTED_IN")
+    G.add_edge("Lana Wachowski", "The Matrix", type="DIRECTED")
+    G.add_edge("The Matrix", "Sci-Fi", type="HAS_GENRE")
+    G.add_edge("The Matrix", "Action", type="HAS_GENRE")
+
+    # Relationships for Interstellar
+    G.add_edge("Christopher Nolan", "Interstellar", type="DIRECTED")
+    G.add_edge("Interstellar", "Sci-Fi", type="HAS_GENRE")
 
     save_graph(G)
     return G

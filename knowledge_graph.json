@@ -4,43 +4,228 @@
   "graph": {},
   "nodes": [
     {
-      "label": "Equipment",
-      "description": "Pump moves fluid and increases pressure.",
-      "id": "Pump"
+      "label": "Movie",
+      "description": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+      "id": "Inception"
     },
     {
-      "label": "Equipment",
-      "description": "Heat exchanger transfers heat between streams.",
-      "id": "HEX"
+      "label": "Movie",
+      "description": "A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the luxurious, ill-fated R.M.S. Titanic.",
+      "id": "Titanic"
     },
     {
-      "label": "Concept",
-      "description": "Flow connects equipment through lines.",
-      "id": "Flow"
+      "label": "Movie",
+      "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+      "id": "The Matrix"
+    },
+    {
+      "label": "Movie",
+      "description": "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+      "id": "Interstellar"
+    },
+    {
+      "label": "Person",
+      "description": "American actor and film producer. Known for Titanic and Inception.",
+      "id": "Leonardo DiCaprio"
+    },
+    {
+      "label": "Person",
+      "description": "British-American film director, producer, and screenwriter. Known for Inception and Interstellar.",
+      "id": "Christopher Nolan"
+    },
+    {
+      "label": "Person",
+      "description": "English actress. Known for Titanic.",
+      "id": "Kate Winslet"
+    },
+    {
+      "label": "Person",
+      "description": "Canadian filmmaker. Directed Titanic.",
+      "id": "James Cameron"
+    },
+    {
+      "label": "Person",
+      "description": "Canadian actor. Known for The Matrix.",
+      "id": "Keanu Reeves"
+    },
+    {
+      "label": "Person",
+      "description": "American film director. Directed The Matrix.",
+      "id": "Lana Wachowski"
+    },
+    {
+      "label": "Person",
+      "description": "Canadian actress. Acted in Inception.",
+      "id": "Ellen Page"
+    },
+    {
+      "label": "Genre",
+      "description": "Science fiction is a genre of speculative fiction.",
+      "id": "Sci-Fi"
+    },
+    {
+      "label": "Genre",
+      "description": "Romance films involve romantic love stories recorded in visual media.",
+      "id": "Romance"
+    },
+    {
+      "label": "Genre",
+      "description": "Action film is a film genre in which the protagonist is thrust into a series of events that typically include violence and physical feats.",
+      "id": "Action"
     }
   ],
   "edges": [
     {
-      "type": "feeds",
-      "source": "Pump",
-      "target": "HEX"
+      "type": "HAS_GENRE",
+      "source": "Inception",
+      "target": "Sci-Fi"
     },
     {
-      "type": "involves",
-      "source": "Flow",
-      "target": "Pump"
+      "type": "HAS_GENRE",
+      "source": "Inception",
+      "target": "Action"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "Titanic",
+      "target": "Romance"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "The Matrix",
+      "target": "Sci-Fi"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "The Matrix",
+      "target": "Action"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "Interstellar",
+      "target": "Sci-Fi"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Leonardo DiCaprio",
+      "target": "Inception"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Leonardo DiCaprio",
+      "target": "Titanic"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "Christopher Nolan",
+      "target": "Inception"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "Christopher Nolan",
+      "target": "Interstellar"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Kate Winslet",
+      "target": "Titanic"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "James Cameron",
+      "target": "Titanic"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Keanu Reeves",
+      "target": "The Matrix"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "Lana Wachowski",
+      "target": "The Matrix"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Ellen Page",
+      "target": "Inception"
     }
   ],
   "links": [
     {
-      "type": "feeds",
-      "source": "Pump",
-      "target": "HEX"
+      "type": "HAS_GENRE",
+      "source": "Inception",
+      "target": "Sci-Fi"
     },
     {
-      "type": "involves",
-      "source": "Flow",
-      "target": "Pump"
+      "type": "HAS_GENRE",
+      "source": "Inception",
+      "target": "Action"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "Titanic",
+      "target": "Romance"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "The Matrix",
+      "target": "Sci-Fi"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "The Matrix",
+      "target": "Action"
+    },
+    {
+      "type": "HAS_GENRE",
+      "source": "Interstellar",
+      "target": "Sci-Fi"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Leonardo DiCaprio",
+      "target": "Inception"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Leonardo DiCaprio",
+      "target": "Titanic"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "Christopher Nolan",
+      "target": "Inception"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "Christopher Nolan",
+      "target": "Interstellar"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Kate Winslet",
+      "target": "Titanic"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "James Cameron",
+      "target": "Titanic"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Keanu Reeves",
+      "target": "The Matrix"
+    },
+    {
+      "type": "DIRECTED",
+      "source": "Lana Wachowski",
+      "target": "The Matrix"
+    },
+    {
+      "type": "ACTED_IN",
+      "source": "Ellen Page",
+      "target": "Inception"
     }
   ]
 }

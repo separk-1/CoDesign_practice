@@ -1,0 +1,42 @@
+[
+  {
+    "category": "Direct Retrieval",
+    "query": "What is Inception?",
+    "description": "Retrieves the node for 'Inception' and its immediate attributes."
+  },
+  {
+    "category": "Direct Retrieval",
+    "query": "Who is Christopher Nolan?",
+    "description": "Retrieves the node for 'Christopher Nolan' and his immediate attributes."
+  },
+  {
+    "category": "1-Hop Relationship (Actor -> Movie)",
+    "query": "Which movies did Leonardo DiCaprio act in?",
+    "description": "Should retrieve Leonardo DiCaprio and the movies linked via ACTED_IN edges (Inception, Titanic)."
+  },
+  {
+    "category": "1-Hop Relationship (Director -> Movie)",
+    "query": "What movies did James Cameron direct?",
+    "description": "Should retrieve James Cameron and the movies linked via DIRECTED edges (Titanic)."
+  },
+  {
+    "category": "Genre Based",
+    "query": "Tell me about Sci-Fi movies.",
+    "description": "Should retrieve the Sci-Fi genre node and movies linked to it (Inception, The Matrix, Interstellar)."
+  },
+  {
+    "category": "Multi-Hop / Complex",
+    "query": "Are there any movies directed by Christopher Nolan that are also Sci-Fi?",
+    "description": "Requires connecting Christopher Nolan -> Movie -> Genre (Sci-Fi)."
+  },
+  {
+    "category": "Multi-Hop / Complex",
+    "query": "What do The Matrix and Inception have in common?",
+    "description": "Should retrieve both movie nodes and finding shared neighbors like the 'Sci-Fi' or 'Action' genre nodes."
+  },
+  {
+    "category": "Thematic",
+    "query": "Find movies about dreams or reality simulations.",
+    "description": "Relies on keyword matching in the description fields (e.g., 'dream' in Inception, 'reality' in The Matrix)."
+  }
+]
